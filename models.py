@@ -34,16 +34,14 @@ class Room(object):
 
     def join(self, user):
         if redis.conn.sadd(self.get_users_hash(), user.email):
-            if not self.exists():
-                self.create()
-            redis.conn.zadd(self.get_rooms_hash(), self.get_size() + 1, self.id)
+            redis.conn.zincrby(self.get_rooms_hash(), 1, self.id)
             return True
         else:
             return False
 
     def leave(self, user):
         if redis.conn.srem(self.get_users_hash(), user.email):
-            redis.conn.zadd(self.get_rooms_hash(), self.get_size() - 1, self.id)
+            redis.conn.zincrby(self.get_rooms_hash(), -1, self.id)
             return True
         else:
             return False
