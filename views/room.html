@@ -5,30 +5,7 @@
 {% block scripts %}
 <script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
 
-<script type="text/javascript">
-	_xSocket = {
-		socket : "",
-		open : function() {
-			_xSocket.socket = new WebSocket("ws://ec2-107-20-131-22.compute-1.amazonaws.com/room/1/socket");
-			_xSocket.socket.onopen = function() { console.log("Opened socket."); _xSocket.socket.send('test'); };
-			_xSocket.socket.onmessage = function(evt) { console.log(evt); };
-			_xSocket.socket.onclose = function() { console.log("Closed socket."); };
-		}
-	}
-
-	$(document).ready( function() {
-		_xSocket.open();
-
-		$("#socket_form").on('submit', function() {
-			_xSocket.socket.send($('#socket_input').val());
-			return false;
-		});
-
-		$('#close_socket').on('click', function() {
-			_xSocket.socket.close();
-		});
-	});
-</script>
+<script type="text/javascript" src="/static/js/room.js"></script>
 {% end %}
 
 {% block body %}
