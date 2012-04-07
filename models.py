@@ -1,9 +1,26 @@
 import redis
 import tornado.websocket
 import threading
+import config
 from hashlib import sha1
+from random import random
 
-redis.conn = redis.StrictRedis(host='localhost', port=6379, db=0)
+redis.conn = redis.Redis(host=config.REDIS['host'], port=config.REDIS['port'], db=config.REDIS['db'])
+
+def generate_salt():
+    return sha1(str(random())).hexdigest()
+
+def create_token():
+    token = generate_salt()
+    while redis.conn.sismember('tokens', token):
+        token = generate_salt()
+    redis.conn.sadd('tokens', token)
+    return token
+
+def claim_token(token):
+    if not token or not redis.conn.srem('tokens', token):
+        return False
+    return True
 
 class Room(object):
     def __init__(self, room_id):
@@ -69,6 +86,40 @@ class User(object):
     def __init__(self, email):
         self.email = email
 
+    @staticmethod
+    def get_all_users():
+         users = redis.conn.smembers('users')
+         user_set = set()
+         for user in users:
+             user_set.add(User(user))
+         return user_set
+
+    @property
+    def name(self):
+        if not hasattr(self, '_name'):
+            self._name = redis.conn.get(self.get_hash('name'))
+        return self._name
+
+    def create(self, password, token=None):
+        if not self.email or not password or not claim_token(token) or self.exists():
+            return False
+        self.set_in_redis("name", self.email)
+        self.set_password(password)
+        self.add_role("guest")
+        redis.conn.sadd('users', self.email)
+        return self
+
+    def destroy(self):
+        redis.conn.delete(self.get_hash('name'))
+        redis.conn.delete(self.get_hash('password'))
+        redis.conn.delete(self.get_hash('salt'))
+        redis.conn.delete(self.get_hash('token'))
+        redis.conn.delete(self.get_hash('roles'))
+        redis.conn.srem('users', self.email)
+
+    def exists(self):
+        return redis.conn.sismember('users', self.email)    
+
     def get_hash(self, value):
         return "user:%s:%s" % (self.email, value)
 
@@ -87,25 +138,26 @@ class User(object):
             redis.conn.set(self.get_hash(value), set_to)
         return self
 
+    def update(self, **kwargs):
+        for key in kwargs:
+            if kwargs[key]:
+                self.set_in_redis(key, kwargs[key])
+
     def salt_password(self, salt, password):
         hash_me = salt + password
         for i in range(100):
-            hash_me = sha1(hash_me)
+            hash_me = sha1(hash_me).hexdigest()
         return hash_me
 
-    def generate_salt(self):
-        from random import random
-        return sha1(random())
-
     def authenticate(self, password):
-        if self.salt_password(self.get_from_redis("salt"), password) == self.get_from_redis("password"):
+        if self.exists() and self.salt_password(self.get_from_redis("salt"), password) == self.get_from_redis("password"):
             return True
         else:
             return False
 
     def auth_with_token(self, token):
         if token == self.get_from_redis("token"):
-            token = self.generate_salt()
+            token = generate_salt()
             self.set_in_redis("token", token)
             return token
         else:
@@ -113,25 +165,18 @@ class User(object):
 
     def auth_for_token(self, password):
         if self.authenticate(password):
-            token = self.generate_salt()
+            token = generate_salt()
             self.set_in_redis("token", token)
             return token
         else:
             return False
 
-    def create(self, name, password):
-        self.set_in_redis("name", name)
-        self.set_password(password)
-        self.add_role("guest")
-        self.set_in_redis("token", self.generate_salt())
-        return self
-
     def set_password(self, password):
-        salt = self.generate_salt()
+        salt = generate_salt()
         self.set_in_redis("salt", salt)
         self.set_in_redis("password", self.salt_password(salt, password))
         return self
-        
+
     def add_role(self, role):
         redis.conn.sadd(self.get_hash("roles"), role)
         return self

@@ -1,13 +1,16 @@
 import controllers
+import config
 from tornado.web import StaticFileHandler
-from settings import settings
 
-urls = [
-    (r"^/robots.txt$", StaticFileHandler, dict(path=settings['static_path'])),
+URLS = [
+    (r"^/robots.txt$", StaticFileHandler, dict(path=config.APPLICATION['static_path'])),
     (r"^/$", controllers.main),
-    (r"^/invite/([\w\d]+)", controllers.invite_code),
-    (r"^/invite", controllers.invite_index),
+    (r"^/join/?([\w\d]*)", controllers.join),
+    (r"^/login", controllers.login),
     (r"^/profile", controllers.user_profile),
+    (r"^/admin$", controllers.admin_panel),
+    (r"^/admin/update_user_roles$", controllers.change_roles),
+    (r"^/upload$", controllers.upload),
     (r"^/room/([\w\d]+)/socket", controllers.room_socket),
     (r"^/room/([\w\d]+)", controllers.room)
 ]
