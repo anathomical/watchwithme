@@ -1,0 +1,15 @@
+{% extends "_core.html" %}
+
+{% block body %}
+<form method="POST" action="/join">
+	{{ xsrf_form_html() }}
+		<label for="email">Email Address:</label>
+		<input type="text" name="email" />
+		<label for="token">Invite Code:</label>
+		<input type="text" name="token" value="{{ token }}"/>
+		<label for="password">Password:</label>
+		<input type="password" name="password" />
+		<label for="confirm_password">Re-type Password:</label>
+		<input type="password" name="confirm_password" />
+		<input type="submit" />
+{% end %}

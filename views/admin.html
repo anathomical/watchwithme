@@ -1,0 +1,24 @@
+{% extends "_core.html" %}
+
+{% block scripts %}
+	<script type="text/javascript" src="/static/js/admin.js"></script>
+{% end %}
+
+{% block body %}
+	{% for user in users %}
+	<div>
+		<form class="user_roles">
+			<span>{{ user.email }} ({{ user.name }})</span>
+			{{ xsrf_form_html() }}
+			<input type="hidden" name="email" value="{{ user.email }}" />
+			<label for="guest">Guest</label>
+			<input type="checkbox" name="guest" {{ 'checked' if user.has_role('guest') else '' }} />
+			<label for="host">Host</label>
+			<input type="checkbox" name="host" {{ 'checked' if user.has_role('host') else '' }} />
+			<label for="admin">Admin</label>
+			<input type="checkbox" name="admin" {{ 'checked' if user.has_role('admin') else '' }} />
+			<input type="submit" value="Update" />
+		</form>
+	</div>
+	{% end %}
+{% end %}

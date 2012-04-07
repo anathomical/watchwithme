@@ -1,0 +1,12 @@
+{% extends "_core.html" %}
+
+{% block body %}
+<form method="POST" action="/login">
+	{{ xsrf_form_html() }}
+		<label for="email">Email Address:</label>
+		<input type="text" name="email" />
+		<label for="password">Password:</label>
+		<input type="password" name="password" />
+		<input type="hidden" name="next" value="{{ redirect }}" />
+		<input type="submit" />
+{% end %}

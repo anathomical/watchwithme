@@ -1,8 +1,16 @@
-<html>
-	<head>
-		<title>Watch With Me - Profile</title>
-	</head>
-	<body>
-		WOO!
-	</body>
-</html>
+{% extends '_core.html' %}
+
+{% block body %}
+<div class="body">
+	<h3>{{ user.email }}</h3>
+	<form method="POST" action="/profile">
+		<label for="name">Display Name</label>
+		<input type="text" name="name" value="{{ user.name }}" />
+		<label for="password">Changes Password</label>
+		<input type="password" name="password" />
+		<label for="confirm_password">Confirm New Password</label>
+		<input type="password" name="confirm_password" />
+		<input type="submit" />
+	</form>
+</div>
+{% end %}
