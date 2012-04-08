@@ -38,9 +38,14 @@ class AuthenticationHandler(object):
 
 class BaseHandler(AuthenticationHandler, tornado.web.RequestHandler):
     """
-    This is a convenience class that pulls in the authentication handler
+    This is a convenience class that pulls in the authentication handler.
+    It also ensures that the current user is always passed to the view.
     """
-    pass
+    def render(self, template_name, **kwargs):
+        if 'current_user' not in kwargs:
+            kwargs['current_user'] = self.current_user
+        super(BaseHandler, self).render(template_name, **kwargs)
+
 
 class main(BaseHandler):
     def get(self):
@@ -68,10 +73,12 @@ class change_roles(BaseHandler):
             roles['host'] = self.get_argument('host', False)
             roles['admin'] = self.get_argument('admin', False)
             for role in roles:
+                # The submission process through AJAX sets the values to strings rather than booleans
                 if roles[role] == 'true':
                     user.add_role(role)
                 else:
                     user.remove_role(role)
+            self.write('success')
 
 class user_profile(BaseHandler):
     @tornado.web.authenticated
@@ -104,6 +111,12 @@ class join(BaseHandler):
             self.redirect('/welcome')
         else:
             self.redirect('/join/'+token)
+
+class logout(BaseHandler):
+    def get(self):
+        self.clear_cookie('user_email')
+        self.clear_cookie('user_token')
+        self.render('views/logout.html', current_user = None)
 
 class login(BaseHandler):
     def get(self):
