@@ -1,24 +1,33 @@
 {% extends "_core.html" %}
 
 {% block scripts %}
+	<script type="text/javascript" src="/static/js/bootstrap-tab.js"></script>
 	<script type="text/javascript" src="/static/js/admin.js"></script>
 {% end %}
 
 {% block body %}
-	{% for user in users %}
-	<div>
-		<form class="user_roles">
-			<span>{{ user.email }} ({{ user.name }})</span>
-			{{ xsrf_form_html() }}
-			<input type="hidden" name="email" value="{{ user.email }}" />
-			<label for="guest">Guest</label>
-			<input type="checkbox" name="guest" {{ 'checked' if user.has_role('guest') else '' }} />
-			<label for="host">Host</label>
-			<input type="checkbox" name="host" {{ 'checked' if user.has_role('host') else '' }} />
-			<label for="admin">Admin</label>
-			<input type="checkbox" name="admin" {{ 'checked' if user.has_role('admin') else '' }} />
-			<input type="submit" value="Update" />
-		</form>
+	<ul class="nav nav-tabs">
+		<li class="active"><a href="#roles" data-toggle="tab">Roles</a></li>
+		<li><a href="#invites" data-toggle="tab">Invites</a></li>
+	</ul>
+	<div class="tab-content">
+		<div class="tab-pane active" id="roles">
+			{% for user in users %}
+			<div>
+				<form class="ajax-intercept-form form-inline" action="/admin/update_user_roles" method="post">
+					<span>{{ user.email }} ({{ user.name }})</span>
+					{{ xsrf_form_html() }}
+					<input type="hidden" name="email" value="{{ user.email }}" />
+					<label for="guest">Guest <input type="checkbox" name="guest" {{ 'checked' if user.has_role('guest') else '' }} /></label>
+					<label for="host">Host <input type="checkbox" name="host" {{ 'checked' if user.has_role('host') else '' }} /></label>
+					<label for="admin">Admin <input type="checkbox" name="admin" {{ 'checked' if user.has_role('admin') else '' }} /></label>
+					<input type="submit" value="Update" />
+				</form>
+			</div>
+			{% end %}
+		</div>
+		<div class="tab-pane" id="invites">
+			INVITES!
+		</div>
 	</div>
-	{% end %}
 {% end %}

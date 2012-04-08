@@ -1,40 +1,4 @@
-div.content {
-	margin:auto;
-	width:700px;
-}
-div.header {
-	text-align:center;
-	clear:both;
-}
-div.main {
-	padding: 5px;
-	clear:both;
-}
-div.footer {
-	text-align:center;
-	font-size:0.8em;
-	border-top:1px solid black;
-	padding-top:10px
-}
-ul.menu {
-	list-style-type:none;
-	margin:0;
-}
-li.menuitem {
-	float:left;
-	font-variant:small-caps;
-	font-size:1.5em;
-	padding-bottom:5px;
-	padding-top:5px;
-	padding-left:50px;
-}
-a.menuitem {
-	text-decoration:none;
-	color:black;
-}
-form label {
-	margin-top: 10px;
-}
-form input {
-	margin-left: 20px;
+.navbar h3{
+	width: 100%;
+	margin: auto;
 }
