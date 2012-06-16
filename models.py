@@ -2,13 +2,19 @@ import redis
 import tornado.websocket
 import threading
 import config
-from hashlib import sha1
+from hashlib import sha1, md5
 from random import random
 
 redis.conn = redis.Redis(host=config.REDIS['host'], port=config.REDIS['port'], db=config.REDIS['db'])
 
 def generate_salt():
     return sha1(str(random())).hexdigest()
+
+def generate_room():
+    room = md5(str(random())).hexdigest()[0:12]
+    while redis.conn.sismember('rooms', room):
+        room = md5(str(random())).hexdigest()[0:12]
+    return room
 
 def create_token():
     token = generate_salt()
@@ -32,6 +38,9 @@ class Room(object):
     def get_rooms_hash(self):
         return "rooms"
 
+    def get_video_id(self):
+        return redis.conn.get('room:%s:video_id' % self.id)
+
     def exists(self):
         if redis.conn.zscore(self.get_rooms_hash(), self.id):
             return True
@@ -51,14 +60,14 @@ class Room(object):
 
     def join(self, user):
         if redis.conn.sadd(self.get_users_hash(), user.email):
-            redis.conn.zincrby(self.get_rooms_hash(), 1, self.id)
+            redis.conn.zincrby(self.get_rooms_hash(), self.id, 1)
             return True
         else:
             return False
 
     def leave(self, user):
         if redis.conn.srem(self.get_users_hash(), user.email):
-            redis.conn.zincrby(self.get_rooms_hash(), -1, self.id)
+            redis.conn.zincrby(self.get_rooms_hash(), self.id, -1)
             return True
         else:
             return False
@@ -159,6 +168,13 @@ class User(object):
         if token == self.get_from_redis("token"):
             token = generate_salt()
             self.set_in_redis("token", token)
+            return token
+        else:
+            return False
+
+    def auth_keep_token(self, token):
+        print('%s == %s' % (token, self.get_from_redis('token')))
+        if token == self.get_from_redis("token"):
             return token
         else:
             return False
