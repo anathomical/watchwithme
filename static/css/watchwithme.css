@@ -2,3 +2,31 @@
 	width: 100%;
 	margin: auto;
 }
+
+.footer {
+	margin-top: 40px;
+	padding: 20px 0px 20px 0px;
+	border-top: 1px solid #333;
+}
+
+video {
+	width: 100%;
+}
+
+#chat-display {
+	height: 100px;
+	border-bottom: 1px solid #333;
+}
+
+#chat-window {
+	height: 100%;
+	overflow: auto;
+}
+
+#chat-input {
+	padding: 5px;
+}
+
+#chat-input input[type="text"] {
+	width: 875px;
+}
