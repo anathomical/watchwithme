@@ -1,31 +1,36 @@
-import tornado.web, tornado.template, tornado.escape
-import os, functools
+from tornado.web import RequestHandler, authenticated, HTTPError
+from tornado.websocket import WebSocketHandler
 
-import redis
+from functools import wraps
 
-import models
+from models import User, Room
+
+from redis import conn
+from models import RedisListener
+from time import time
+import json
 
 sockets = []
 
 def has_role(role):
     def role_wrapper(method):
-        @tornado.web.authenticated
-        @functools.wraps(method)
+        @authenticated
+        @wraps(method)
         def wrapper(self, *args, **kwargs):
             if not self.current_user.has_role(role):
-                raise tornado.web.HTTPError(403)
+                raise HTTPError(403)
             return method(self, *args, **kwargs)
         return wrapper
     return role_wrapper
 
-class AuthenticationHandler(object):
+class AuthenticationHandler(RequestHandler):
     """
     We use an authentication handler that descends directly from Object so that we
     can apply it to both standard request handlers and to websocket request handlers
     using multiple inheritance.
     """
     def get_current_user(self):
-        user =  models.User(self.get_secure_cookie('user_email'))
+        user =  User(self.get_secure_cookie('user_email'))
         token = user.auth_with_token(self.get_secure_cookie('user_token'))
         if token:
             self.set_secure_cookie('user_token', token)
@@ -36,16 +41,18 @@ class AuthenticationHandler(object):
     def has_role(self, role):
         return self.current_user.has_role(role)
 
-class BaseHandler(AuthenticationHandler, tornado.web.RequestHandler):
+class BaseHandler(AuthenticationHandler):
     """
     This is a convenience class that pulls in the authentication handler.
     It also ensures that the current user is always passed to the view.
     """
     def render(self, template_name, **kwargs):
-        if 'current_user' not in kwargs:
-            kwargs['current_user'] = self.current_user
+        kwargs['current_user'] = kwargs.get('current_user', self.current_user)
+        if self.current_user:
+            kwargs['is_admin'] = kwargs.get('is_admin', self.current_user.has_role('admin'))
+            kwargs['is_host'] = kwargs.get('is_host', self.current_user.has_role('host'))
+            kwargs['is_guest'] = kwargs.get('is_guest', self.current_user.has_role('guest'))
         super(BaseHandler, self).render(template_name, **kwargs)
-
 
 class main(BaseHandler):
     def get(self):
@@ -54,7 +61,7 @@ class main(BaseHandler):
 class admin_panel(BaseHandler):
     @has_role('admin')
     def get(self):
-        self.render("views/admin.html", users=models.User.get_all_users())
+        self.render("views/admin.html", users=User.get_all_users())
 
 class send_invite(BaseHandler):
     @has_role('admin')
@@ -67,7 +74,7 @@ class change_roles(BaseHandler):
     def post(self):
         email = self.get_argument('email', None)
         if email:
-            user = models.User(email)
+            user = User(email)
             roles = {}
             roles['guest'] = self.get_argument('guest', False)
             roles['host'] = self.get_argument('host', False)
@@ -81,11 +88,11 @@ class change_roles(BaseHandler):
             self.write('success')
 
 class user_profile(BaseHandler):
-    @tornado.web.authenticated
+    @authenticated
     def get(self):
         self.render("views/profile.html", user=self.current_user)
 
-    @tornado.web.authenticated
+    @authenticated
     def post(self):
         self.current_user.update(name = self.get_argument('name', self.current_user.name))
         password = self.get_argument('password', None)
@@ -107,7 +114,7 @@ class join(BaseHandler):
         email = self.get_argument('email', None)
         token = self.get_argument('token', '')
         password = self.get_argument('password', None)
-        if models.User(email).create(password, token):
+        if User(email).create(password, token):
             self.redirect('/welcome')
         else:
             self.redirect('/join/'+token)
@@ -127,7 +134,7 @@ class login(BaseHandler):
         redirect = self.get_argument('redirect', '/profile')
         email = self.get_argument('email', None)
         password = self.get_argument('password', None)
-        user = models.User(email)
+        user = User(email)
         token = user.auth_for_token(password)
         if not email or not password or not token:
             self.redirect('/login?next=' + redirect)
@@ -137,33 +144,43 @@ class login(BaseHandler):
 
 class room(BaseHandler):
     def get(self, room_id):
-        self.render("views/room.html")
+	room = Room(room_id)
+        if not room.exists():
+            self.redirect('/')
+        self.render("views/room.html", video_key=room.get_video_id())
 
-class room_socket(AuthenticationHandler, tornado.websocket.WebSocketHandler):
+class room_socket(WebSocketHandler):
     def open(self, room_id):
-        print("socket opened")
-	self.write_message('welcome!')
-	self.room = models.Room(room_id)
-	self.user = models.User(1)
-        self.room.join(self.user)
-        self.subscription = models.RedisListener(self.room, self)
-        self.subscription.start()
+        print('room_id: %s' % room_id)
+        self.write_message('welcome!')
+        self.room = Room(room_id)
+        self.user = None
 
     def on_message(self, message):
-        message = self.construct_message(message)
-        print(message)
-        redis.conn.rpush("room:%s:logs" % self.room.id, message)
-        redis.conn.publish("room:%s" % self.room.id, message)
+        message = json.parse(message)
+        if not self.user:
+            user =  User(message.data.user.email)
+            if user.auth_keep_token(message.data.user.token):
+                self.user = user
+                self.room.join(self.user)
+                self.subscription = RedisListener(self.room, self)
+                self.subscription.start()
+            else:
+                self.write_message('Authentication error.')
+                self.close()
+        else:
+            message = self.construct_message(message)
+            print(message)
+            conn.rpush("room:%s:logs" % self.room.id, message)
+            conn.publish("room:%s" % self.room.id, message)
 
     def on_close(self):
         print("socket closed")
         self.subscription.stop()
-        redis.conn.publish("room:%s" % self.room.id, self.construct_message("Goodbye."))
+        conn.publish("room:%s" % self.room.id, self.construct_message("Goodbye."))
         self.room.leave(self.user)
 
     def construct_message(self, message):
-        from time import time
-        import json
         message_object = {
             'user' : self.user.email,
             'time' : time(),
