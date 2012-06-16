@@ -7,9 +7,35 @@
 				<li><a class="menuitem" href="/">Demo</a></li>
 				<li><a class="menuitem" href="/">Technology</a></li>
 			</ul>
+			<ul class="nav pull-right">
+				<li class="dropdown">
 			{% if current_user %}
-				<a href="/logout">Log Out</a>
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown">{{ current_user.name }}<strong class="caret"></strong></a>
+					<ul class="dropdown-menu">
+						{% if is_admin %}
+						<li><a href="/admin">Admin</a></li>
+						{% end %}
+						{% if is_host %}
+						<li><a href="/admin">Rooms</a></li>
+						{% end %}
+						{% if is_guest %}
+						<li><a href="/admin">Profile</a></li>
+						{% end %}
+						<li class="divider"></li>
+						<li><a href="/logout">Log Out</a></li>
+					</ul>
+			{% else %}
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Log In<strong class="caret"></strong></a>
+					<ul class="dropdown-menu">
+						<form method="POST" action="/login">
+							<li><input type="text" name="email" /></li>
+							<li><input type="password" name="password" /></li>
+							<li><input type="submit" value="Log In" /></li>
+						</form>
+					</ul>
 			{% end %}
+				</li>
+			</ul>
 		</div>
 	</div>
 </div>
