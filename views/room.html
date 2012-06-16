@@ -3,15 +3,28 @@
 {% block title %}Room{% end %}
 
 {% block scripts %}
-<script type="text/javascript" src="http://code.jquery.com/jquery-1.7.1.min.js"></script>
-
 <script type="text/javascript" src="/static/js/room.js"></script>
 {% end %}
 
 {% block body %}
-<form id="socket_form">
-	<input type="text" id="socket_input" />
-	<input type="submit" value="send" />
-	<input type="button" id="close_socket" value="Close Socket" />
-</form>
+<div>
+	<video id="video-player" controls>
+		<source src="http://video.watchwithme.net/{{ video_key }}.mp4" type="video/mp4" />
+	</video>
+</div>
+<div id="chat-container" class="container">
+	<div id="chat-display">
+		<div id="chat-window" class="span10">
+		</div>
+		<div id="roll-call-window" class="span2">
+		</div>
+	</div>
+	<div id="chat-input">
+		<form id="socket_form">
+			<input type="text" id="socket_input" />
+			<input type="submit" value="Send" />
+			<input type="button" id="close_socket" value="Close Socket" />
+		</form>
+	</div>
+</div>
 {% end %}
