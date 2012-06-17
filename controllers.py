@@ -1,5 +1,7 @@
-from tornado.web import RequestHandler, authenticated, HTTPError
+from tornado.web import RequestHandler, authenticated, HTTPError, decode_signed_value, create_signed_value
 from tornado.websocket import WebSocketHandler
+
+from config import APPLICATION
 
 from functools import wraps
 
@@ -147,44 +149,60 @@ class room(BaseHandler):
 	room = Room(room_id)
         if not room.exists():
             self.redirect('/')
-        self.render("views/room.html", video_key=room.get_video_id())
+        self.render("views/room.html", video_key=room.get_video_id(),
+            user_email=create_signed_value(APPLICATION['cookie_secret'], 'user_email', self.current_user.email),
+            user_token=create_signed_value(APPLICATION['cookie_secret'], 'user_token', self.current_user.token))
 
 class room_socket(WebSocketHandler):
     def open(self, room_id):
         print('room_id: %s' % room_id)
-        self.write_message('welcome!')
         self.room = Room(room_id)
         self.user = None
 
-    def on_message(self, message):
-        message = json.parse(message)
+    def on_message(self, data):
+        data = json.loads(data)
         if not self.user:
-            user =  User(message.data.user.email)
-            if user.auth_keep_token(message.data.user.token):
+            print('No user attached to this message, authenticating.')
+            user =  User(decode_signed_value(APPLICATION['cookie_secret'], 'user_email', data.get('user_email')))
+            print(data)
+            if user.auth_keep_token(decode_signed_value(APPLICATION['cookie_secret'], 'user_token', data.get('user_token'))):
+                print('Auth successful.  Setting user to %s' % user.email)
                 self.user = user
                 self.room.join(self.user)
                 self.subscription = RedisListener(self.room, self)
                 self.subscription.start()
+                self.log_and_publish(construct_message('JOIN', 'Welcome!', self.user.name))
             else:
-                self.write_message('Authentication error.')
+                print('Authentication error.')
+                self.write_message(construct_message("ERROR", 'Authentication error.'))
                 self.close()
         else:
-            message = self.construct_message(message)
+            message = construct_message(data.get('type'), data.get('message'), self.user.name)
             print(message)
-            conn.rpush("room:%s:logs" % self.room.id, message)
-            conn.publish("room:%s" % self.room.id, message)
+            self.log_and_publish(message)            
 
     def on_close(self):
         print("socket closed")
-        self.subscription.stop()
-        conn.publish("room:%s" % self.room.id, self.construct_message("Goodbye."))
+        if self.get('subscription', None):
+            self.subscription.stop()
+            self.log_and_publish(construct_message('LEAVE', 'Goodbye.', self.user.name))
         self.room.leave(self.user)
 
-    def construct_message(self, message):
-        message_object = {
-            'user' : self.user.email,
-            'time' : time(),
-            'data' : message
-        }
-        return json.dumps(message_object)
+    def log_and_publish(self, message):
+        conn.rpush("room:%s:logs" % self.room.id, message)
+        conn.publish("room:%s" % self.room.id, message)
+
+def construct_message(type, message, user=None, timestamp=None):
+    return construct_wire_data(type, {'message':message}, user, timestamp)
+
+def construct_wire_data(type, data, user=None, timestamp=None):
+    if not timestamp:
+        timestamp = time()
+    message_object = {
+        'type' : type,
+        'user' : user,
+        'time' : timestamp,
+        'data' : data,
+    }
+    return json.dumps(message_object)
 

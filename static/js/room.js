@@ -6,19 +6,20 @@ _xSocket = {
 		_xSocket.socket = new WebSocket(socket_uri);
 		_xSocket.socket.onopen = function() { 
 			console.log("Opened socket.  Sending auth info.");
-			_xSocket.socket.send({
+			_xSocket.socket.send(JSON.stringify({
 				'type': 'LOGIN',
-				'email': $.cookie('user_email'),
-				'token', $.cookie('user_token'),
-			});
+				'user_email': _user_email,
+				'user_token': _user_token,
+			}));
 		};
 		_xSocket.socket.onmessage = _xSocket.handle_message;
 		_xSocket.socket.onclose = function() { console.log("Closed socket."); };
 	},
 	handle_message : function(evt) {
-		var data = json.parse(evt.data);
+		console.log(evt.data);
+		var data = JSON.parse(evt.data);
 		if (data.type == 'CHAT') {
-			_xSocket.show_message(data.user, 'TIMESTAMP', data.message);
+			_xSocket.show_message(data.user, 'TIMESTAMP', data.data.message);
 		}
 	},
 	show_message : function(user, timestamp, message) {
@@ -43,10 +44,10 @@ $(document).ready( function() {
 	_xSocket.open("ws://50.19.239.129:9000/room/198abde28aed/socket");
 	$("#socket_form").on('submit', function() {
 		var input_element = $('#socket_input');
-		_xSocket.socket.send({
+		_xSocket.socket.send(JSON.stringify({
 			'type': 'CHAT',
-			'message': input_element.val()),
-		});
+			'message': input_element.val(),
+		}));
 		input_element.val('');
 		return false;
 	});

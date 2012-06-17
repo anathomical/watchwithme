@@ -109,6 +109,10 @@ class User(object):
             self._name = redis.conn.get(self.get_hash('name'))
         return self._name
 
+    @property
+    def token(self):
+        return self.get_from_redis('token')
+
     def create(self, password, token=None):
         if not self.email or not password or not claim_token(token) or self.exists():
             return False
