@@ -158,6 +158,7 @@ class room_socket(WebSocketHandler):
         print('room_id: %s' % room_id)
         self.room = Room(room_id)
         self.user = None
+        self.subscription = None
 
     def on_message(self, data):
         data = json.loads(data)
@@ -183,7 +184,7 @@ class room_socket(WebSocketHandler):
 
     def on_close(self):
         print("socket closed")
-        if self.get('subscription', None):
+        if self.subscription:
             self.subscription.stop()
             self.log_and_publish(construct_message('LEAVE', 'Goodbye.', self.user.name))
         self.room.leave(self.user)
