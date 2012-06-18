@@ -172,26 +172,25 @@ class room_socket(WebSocketHandler):
                 self.room.join(self.user)
                 self.subscription = RedisListener(self.room, self)
                 self.subscription.start()
-                self.log_and_publish(construct_message('JOIN', 'Welcome!', self.user.name))
+                self.log_and_publish(construct_message('JOIN', 'Welcome!', self.user))
             else:
                 print('Authentication error.')
                 self.write_message(construct_message("ERROR", 'Authentication error.'))
                 self.close()
         else:
-            message = construct_message(data.get('type'), data.get('message'), self.user.name)
-            print(message)
-            self.log_and_publish(message)            
+            self.log_and_publish(construct_message(data.get('type'), data.get('message'), self.user))
 
     def on_close(self):
         print("socket closed")
         if self.subscription:
             self.subscription.stop()
-            self.log_and_publish(construct_message('LEAVE', 'Goodbye.', self.user.name))
+            self.log_and_publish(construct_message('LEAVE', 'Goodbye.', self.user))
         self.room.leave(self.user)
 
     def log_and_publish(self, message):
-        conn.rpush("room:%s:logs" % self.room.id, message)
-        conn.publish("room:%s" % self.room.id, message)
+        print(message.get('log'))
+        conn.rpush("room:%s:logs" % self.room.id, message.get('log'))
+        conn.publish("room:%s" % self.room.id, message.get('display'))
 
 def construct_message(type, message, user=None, timestamp=None):
     return construct_wire_data(type, {'message':message}, user, timestamp)
@@ -199,11 +198,20 @@ def construct_message(type, message, user=None, timestamp=None):
 def construct_wire_data(type, data, user=None, timestamp=None):
     if not timestamp:
         timestamp = time()
-    message_object = {
+    log_object = {
         'type' : type,
-        'user' : user,
+        'user' : getattr(user, 'email', None),
         'time' : timestamp,
         'data' : data,
     }
-    return json.dumps(message_object)
+    display_object = {
+        'type' : log_object.get('type'),
+        'user' : getattr(user, 'name', None),
+        'time' : log_object.get('time'),
+        'data' : log_object.get('data'),
+    }
+    return {
+        'log' : json.dumps(log_object),
+        'display' : json.dumps(display_object),
+    }
 

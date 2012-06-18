@@ -21,23 +21,45 @@ _xSocket = {
 		if (data.type == 'CHAT') {
 			_xSocket.show_message(data.user, 'TIMESTAMP', data.data.message);
 		}
+		else if (data.type == 'PLAY') {
+			_xVideo.start_playing();
+		}
+		else if (data.type == 'PAUSE') {
+			_xVideo.pause_playing();
+		}
 	},
 	show_message : function(user, timestamp, message) {
 		var display_message = user + ':' + message;
 		_xSocket.chat_window.innerHTML += '<p>'+display_message+'</p>';
 		_xSocket.chat_window.scrollTop = _xSocket.chat_window.scrollHeight;
 	},
+	click_play : function() {
+		_xSocket.socket.send(JSON.stringify({
+			'type': 'PLAY',
+		}));
+	},
+	click_pause : function() {
+		_xSocket.socket.send(JSON.stringify({
+			'type': 'PAUSE',
+		}));
+	},
 }
 _xVideo = {
 	element : "",
 	init : function() {
-		_xVideo.video = $('#video-player');
-		_xVideo.video.on('play',  function(evt) {
+		_xVideo.element = document.getElementById('video-player');
+		$(_xVideo.element).on('play',  function(evt) {
 			console.log('playing');
 		});
-		_xVideo.video.on('pause', function(evt) {
+		$(_xVideo.element).on('pause', function(evt) {
 			console.log('pausing');
 		});
+	},
+	start_playing : function() {
+		_xVideo.element.play();
+	},
+	pause_playing : function() {
+		_xVideo.element.pause();
 	}
 }
 $(document).ready( function() {
