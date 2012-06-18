@@ -38,6 +38,17 @@ class Room(object):
     def get_rooms_hash(self):
         return "rooms"
 
+    def get_room_timecodes_hash(self):
+        return 'rooms:timecodes'
+
+    @property
+    def timecode(self):
+        return redis.conn.zscore(self.get_room_timecodes_hash(), self.id)
+
+    @timecode.setter
+    def timecode(self, value):
+        redis.conn.zadd(self.get_room_timecodes_hash(), self.id, value)
+
     def get_video_id(self):
         return redis.conn.get('room:%s:video_id' % self.id)
 
