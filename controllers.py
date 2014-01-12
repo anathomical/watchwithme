@@ -197,7 +197,7 @@ class simpleroom(BaseHandler):
         room = Room(room_id)
         if not room.exists():
             room.create()
-        self.render("views/room.html", video_key=room.get_video_id(),
+        self.render("views/room.html", video_key='something', #TODO set video_key to something meaningful
             user_email=create_signed_value(APPLICATION['cookie_secret'], 'user_email', self.current_user.email),
             user_token=create_signed_value(APPLICATION['cookie_secret'], 'user_token', self.current_user.token))
 
