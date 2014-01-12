@@ -13,7 +13,7 @@
 {% block body %}
 <div>
 	<video id="video-player" controls>
-		<source src="http://video.watchwithme.net/{{ video_key }}.mp4" type="video/mp4" />
+        <source src="{{video_url}}" type="video/mp4" />
 	</video>
 </div>
 <div id="chat-container" class="container">
@@ -31,4 +31,13 @@
 		</form>
 	</div>
 </div>
+
+<script type="text/javascript">
+    $(document).ready( function () {
+        var location = "ws://" + window.location.host + "/room/" + {{room_id}} + "/socket";
+        console.log('executing handler init');
+        initSocketHandlers(location);
+    });
+</script>
+
 {% end %}

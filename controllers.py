@@ -197,9 +197,11 @@ class simpleroom(BaseHandler):
         room = Room(room_id)
         if not room.exists():
             room.create()
-        self.render("views/room.html", video_key='something', #TODO set video_key to something meaningful
-            user_email=create_signed_value(APPLICATION['cookie_secret'], 'user_email', self.current_user.email),
-            user_token=create_signed_value(APPLICATION['cookie_secret'], 'user_token', self.current_user.token))
+        self.render("views/room.html",
+                    video_url='/static/testvid.mp4', #TODO set video_key to something meaningful
+                    room_id=room_id,
+                    user_email=create_signed_value(APPLICATION['cookie_secret'], 'user_email', self.current_user.email),
+                    user_token=create_signed_value(APPLICATION['cookie_secret'], 'user_token', self.current_user.token))
 
 def construct_message(type, message, user=None, timestamp=None):
     return construct_wire_data(type, {'message':message}, user, timestamp)
