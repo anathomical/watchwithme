@@ -198,7 +198,7 @@ class simpleroom(BaseHandler):
         if not room.exists():
             room.create()
         self.render("views/room.html",
-                    video_url='/static/testvid.mp4', #TODO set video_key to something meaningful
+                    video_url='http://video.watchwithme.net/c7be1b816522e06999defe5524ab918189485286.mp4', #TODO set video_key to something meaningful
                     room_id=room_id,
                     user_email=create_signed_value(APPLICATION['cookie_secret'], 'user_email', self.current_user.email),
                     user_token=create_signed_value(APPLICATION['cookie_secret'], 'user_token', self.current_user.token))
