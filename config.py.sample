@@ -1,0 +1,19 @@
+import settings
+
+APPLICATION = {
+    'debug' : True,
+    'gzip' : False,
+    'cookie_secret': 'lolwut',
+    'static_path': settings.settings['static_path']
+}
+
+SERVER = {
+    'port': 8080
+}
+
+REDIS = {
+    'db': 0,
+    'host': '127.0.0.1',
+    'port': 6379,
+}
+

@@ -1,2 +1,8 @@
 *.pyc
 config.py
+
+bin/
+lib/
+local/
+share/
+
