@@ -63,7 +63,7 @@ _xVideo = {
 	}
 }
 $(document).ready( function() {
-	_xSocket.open("ws://50.19.239.129:9000/room/198abde28aed/socket");
+	_xSocket.open("ws://ec2.laties.info:8080/room/198abde28aed/socket");
 	$("#socket_form").on('submit', function() {
 		var input_element = $('#socket_input');
 		_xSocket.socket.send(JSON.stringify({
