@@ -13,4 +13,3 @@ URLS = [
     (r"^/room/([\w\d]+)/socket/?$", controllers.room_socket),
     (r"^/room/([\w\d]+)/?$", controllers.room),
 ]
-    
