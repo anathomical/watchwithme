@@ -12,4 +12,5 @@ URLS = [
     (r"^/upload/?$", controllers.upload),
     (r"^/room/([\w\d]+)/socket/?$", controllers.room_socket),
     (r"^/room/([\w\d]+)/?$", controllers.room),
+    (r"^/simpleroom/([\w\d]+)/?$", controllers.simpleroom),
 ]
