@@ -90,14 +90,18 @@ class RedisListener(threading.Thread):
         self.socket = socket
         self.time_to_die = threading.Event()
         super(RedisListener, self).__init__()
-        
+
     def run(self):
         self.subscription = redis.conn.pubsub()
 	self.subscription.subscribe("room:%s" % self.room.id)
         for message in self.subscription.listen():
             if self.time_to_die.isSet():
                 break
-            self.socket.write_message(message['data'])
+            try:
+                self.socket.write_message(message['data'])
+            except:
+                print message, 'was badly formatted'
+
 
     def stop(self):
         self.time_to_die.set()
@@ -142,7 +146,7 @@ class User(object):
         redis.conn.srem('users', self.email)
 
     def exists(self):
-        return redis.conn.sismember('users', self.email)    
+        return redis.conn.sismember('users', self.email)
 
     def get_hash(self, value):
         return "user:%s:%s" % (self.email, value)
