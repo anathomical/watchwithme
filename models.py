@@ -79,6 +79,8 @@ class Room(object):
     def leave(self, user):
         if redis.conn.srem(self.get_users_hash(), user.email):
             redis.conn.zincrby(self.get_rooms_hash(), self.id, -1)
+            #murder user
+            user.destroy()
             return True
         else:
             return False
@@ -129,6 +131,9 @@ class User(object):
         return self.get_from_redis('token')
 
     def create(self, password, token=None):
+        if token == None:
+            token = create_token()
+            self.set_in_redis("token", token)
         if not self.email or not password or not claim_token(token) or self.exists():
             return False
         self.set_in_redis("name", self.email)

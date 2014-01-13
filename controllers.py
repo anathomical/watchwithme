@@ -10,9 +10,21 @@ from models import User, Room
 from redis import conn
 from models import RedisListener
 from time import time
+
+import hashlib
 import json
+import random
+import string
 
 sockets = []
+
+def make_random_user():
+    hasher = hashlib.md5()
+    hasher.update(''.join([random.choice(string.letters) for i in range(10)]))
+    name = hasher.hexdigest()
+    user =  User(name)
+    user.create('lolwut')
+    return user
 
 def has_role(role):
     def role_wrapper(method):
@@ -38,7 +50,9 @@ class AuthenticationHandler(RequestHandler):
             self.set_secure_cookie('user_token', token)
             return user
         else:
-            return None
+            user = make_random_user()
+            self.set_secure_cookie('user_token', user.token)
+            return user
 
     def has_role(self, role):
         return self.current_user.has_role(role)
@@ -163,20 +177,12 @@ class room_socket(WebSocketHandler):
     def on_message(self, data):
         data = json.loads(data)
         if not self.user:
-            print('No user attached to this message, authenticating.')
-            user =  User(decode_signed_value(APPLICATION['cookie_secret'], 'user_email', data.get('user_email')))
-            print(data)
-            if user.auth_keep_token(decode_signed_value(APPLICATION['cookie_secret'], 'user_token', data.get('user_token'))):
-                print('Auth successful.  Setting user to %s' % user.email)
-                self.user = user
-                self.room.join(self.user)
-                self.subscription = RedisListener(self.room, self)
-                self.subscription.start()
-                self.log_and_publish(construct_message('JOIN', 'Welcome!', self.user))
-            else:
-                print('Authentication error.')
-                self.write_message(construct_message("ERROR", 'Authentication error.'))
-                self.close()
+            # make name
+            self.user = make_random_user()
+            self.room.join(self.user)
+            self.subscription = RedisListener(self.room, self)
+            self.subscription.start()
+            self.log_and_publish(construct_message('JOIN', 'Welcome!', self.user))
         else:
             self.log_and_publish(construct_message(data.get('type'), data.get('message'), self.user))
 
@@ -200,8 +206,8 @@ class simpleroom(BaseHandler):
         self.render("views/room.html",
                     video_url='http://video.watchwithme.net/c7be1b816522e06999defe5524ab918189485286.mp4', #TODO set video_key to something meaningful
                     room_id=room_id,
-                    user_email=create_signed_value(APPLICATION['cookie_secret'], 'user_email', self.current_user.email),
-                    user_token=create_signed_value(APPLICATION['cookie_secret'], 'user_token', self.current_user.token))
+                    user_email=self.current_user.email,
+                    user_token=self.current_user.token)
 
 def construct_message(type, message, user=None, timestamp=None):
     return construct_wire_data(type, {'message':message}, user, timestamp)
