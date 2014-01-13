@@ -27,6 +27,9 @@ _xSocket = {
 		else if (data.type == 'PAUSE') {
 			_xVideo.pause_playing();
 		}
+        else if (data.type == 'SET_SOURCE') {
+            _xVideo.set_video_source(data.source_url);
+        }
 	},
 	show_message : function(user, timestamp, message) {
 		var display_message = user + ':' + message;
@@ -63,9 +66,16 @@ _xVideo = {
 	},
 	pause_playing : function() {
 		_xVideo.element.pause();
-	}
+	},
+    set_video_source : function (source_url) {
+        this.element.pause();
+        $(this.element)
+            .find('source')
+            .attr('src', source_url);
+        this.element.load();
+        this.element.play();
+    }
 }
-
 
 var initSocketHandlers = function(location) {
 	_xSocket.open(location);
