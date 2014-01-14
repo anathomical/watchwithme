@@ -31,7 +31,6 @@ def claim_token(token):
 class Room(object):
     def __init__(self, room_id):
         self.id = room_id
-        self.host = None
 
     def get_users_hash(self):
         return "room:%s:users" % self.id
@@ -82,7 +81,7 @@ class Room(object):
         if redis.conn.sadd(self.get_users_hash(), user.email):
             redis.conn.zincrby(self.get_rooms_hash(), self.id, 1)
             print user.email, self.host, type(self.host)
-            if self.host == 'None':
+            if self.host == 'None' or self.host == None:
                 print '%s is now host of room %s' % (user.email, self.id)
                 self.host = user.email
             return True

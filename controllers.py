@@ -186,12 +186,10 @@ class room_socket(WebSocketHandler):
             self.log_and_publish(construct_message('JOIN', 'Welcome!', self.user))
             print self.room.host
         else:
-            ''' attempt to block set source commands to host only, but host keeps getting unset...
             if data.get('type') == 'SET_SOURCE' and \
                self.user.email != self.room.host:
                 print 'User tried to set source', self.user.email, self.room.host
                 return
-            '''
             self.log_and_publish(construct_message(data.get('type'), data.get('message'), self.user))
 
     def on_close(self):
