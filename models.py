@@ -31,6 +31,7 @@ def claim_token(token):
 class Room(object):
     def __init__(self, room_id):
         self.id = room_id
+        self.host = None
 
     def get_users_hash(self):
         return "room:%s:users" % self.id
@@ -48,6 +49,14 @@ class Room(object):
     @timecode.setter
     def timecode(self, value):
         redis.conn.zadd(self.get_room_timecodes_hash(), self.id, value)
+
+    @property
+    def host(self):
+        return redis.conn.get('room:%s:host' % self.id)
+
+    @host.setter
+    def host(self, val):
+        redis.conn.set('room:%s:host' % self.id, val)
 
     def get_video_id(self):
         return redis.conn.get('room:%s:video_id' % self.id)
@@ -72,13 +81,21 @@ class Room(object):
     def join(self, user):
         if redis.conn.sadd(self.get_users_hash(), user.email):
             redis.conn.zincrby(self.get_rooms_hash(), self.id, 1)
+            print user.email, self.host, type(self.host)
+            if self.host == 'None':
+                print '%s is now host of room %s' % (user.email, self.id)
+                self.host = user.email
             return True
         else:
+            print 'join failed'
             return False
 
     def leave(self, user):
         if redis.conn.srem(self.get_users_hash(), user.email):
             redis.conn.zincrby(self.get_rooms_hash(), self.id, -1)
+            #unset host if necessary
+            if self.host == user.email:
+                self.host = None
             #murder user
             user.destroy()
             return True
@@ -95,7 +112,7 @@ class RedisListener(threading.Thread):
 
     def run(self):
         self.subscription = redis.conn.pubsub()
-	self.subscription.subscribe("room:%s" % self.room.id)
+        self.subscription.subscribe("room:%s" % self.room.id)
         for message in self.subscription.listen():
             if self.time_to_die.isSet():
                 break

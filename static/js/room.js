@@ -28,7 +28,7 @@ _xSocket = {
 			_xVideo.pause_playing();
 		}
         else if (data.type == 'SET_SOURCE') {
-            _xVideo.set_video_source(data.source_url);
+            _xVideo.set_video_source(data.data.message.source_url);
         }
 	},
 	show_message : function(user, timestamp, message) {
@@ -88,8 +88,21 @@ var initSocketHandlers = function(location) {
 		input_element.val('');
 		return false;
 	});
+
+    $("#source_url_form").on('submit', function() {
+        var new_source = $('#source_url_input').val();
+        _xSocket.socket.send(JSON.stringify({
+            'type': 'SET_SOURCE',
+            'message': {
+                'source_url': new_source,
+            },
+        }));
+        return false;
+    });
+
 	$('#close_socket').on('click', function() {
 		_xSocket.socket.close();
 	});
+
 	_xVideo.init();
 }

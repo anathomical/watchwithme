@@ -22,7 +22,7 @@ def make_random_user():
     hasher = hashlib.md5()
     hasher.update(''.join([random.choice(string.letters) for i in range(10)]))
     name = hasher.hexdigest()
-    user =  User(name)
+    user = User(name)
     user.create('lolwut')
     return user
 
@@ -175,6 +175,7 @@ class room_socket(WebSocketHandler):
         self.subscription = None
 
     def on_message(self, data):
+        print 'messaged'
         data = json.loads(data)
         if not self.user:
             # make name
@@ -183,7 +184,14 @@ class room_socket(WebSocketHandler):
             self.subscription = RedisListener(self.room, self)
             self.subscription.start()
             self.log_and_publish(construct_message('JOIN', 'Welcome!', self.user))
+            print self.room.host
         else:
+            ''' attempt to block set source commands to host only, but host keeps getting unset...
+            if data.get('type') == 'SET_SOURCE' and \
+               self.user.email != self.room.host:
+                print 'User tried to set source', self.user.email, self.room.host
+                return
+            '''
             self.log_and_publish(construct_message(data.get('type'), data.get('message'), self.user))
 
     def on_close(self):
@@ -204,7 +212,7 @@ class simpleroom(BaseHandler):
         if not room.exists():
             room.create()
         self.render("views/room.html",
-                    video_url='http://video.watchwithme.net/c7be1b816522e06999defe5524ab918189485286.mp4', #TODO set video_key to something meaningful
+                    video_url='http://video.watchwithme.net/c7be1b816522e06999defe5524ab918189485286.mp4',
                     room_id=room_id,
                     user_email=self.current_user.email,
                     user_token=self.current_user.token)
