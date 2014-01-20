@@ -210,7 +210,7 @@ class simpleroom(BaseHandler):
         if not room.exists():
             room.create()
         self.render("views/room.html",
-                    video_url='http://video.watchwithme.net/c7be1b816522e06999defe5524ab918189485286.mp4',
+                    video_url='',
                     room_id=room_id,
                     user_email=self.current_user.email,
                     user_token=self.current_user.token)
