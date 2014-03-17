@@ -130,11 +130,11 @@ class User(object):
 
     @staticmethod
     def get_all_users():
-         users = redis.conn.smembers('users')
-         user_set = set()
-         for user in users:
-             user_set.add(User(user))
-         return user_set
+        users = redis.conn.smembers('users')
+        user_set = set()
+        for user in users:
+            user_set.add(User(user))
+        return user_set
 
     @property
     def name(self):
@@ -243,4 +243,3 @@ class User(object):
 
     def has_role(self, role):
         return redis.conn.sismember(self.get_hash("roles"), role)
-

@@ -160,7 +160,7 @@ class login(BaseHandler):
 
 class room(BaseHandler):
     def get(self, room_id):
-	room = Room(room_id)
+        room = Room(room_id)
         if not room.exists():
             self.redirect('/')
         self.render("views/room.html", video_key=room.get_video_id(),
@@ -237,4 +237,3 @@ def construct_wire_data(type, data, user=None, timestamp=None):
         'log' : json.dumps(log_object),
         'display' : json.dumps(display_object),
     }
-
