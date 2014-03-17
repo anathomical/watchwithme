@@ -51,12 +51,11 @@ _xVideo = {
 	element : "",
 	init : function() {
 		_xVideo.element = document.getElementById('video-player');
-		$(_xVideo.element).on('play',  function(evt) {
+		$("#video-play").click(function(evt) {
             _xSocket.click_play();
-
 			console.log('playing');
 		});
-		$(_xVideo.element).on('pause', function(evt) {
+		$("#video-pause").click(function(evt) {
             _xSocket.click_pause();
 			console.log('pausing');
 		});

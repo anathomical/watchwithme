@@ -12,9 +12,13 @@
 
 {% block body %}
 <div>
-	<video id="video-player" controls>
+	<video id="video-player">
         <source src="{{video_url}}" type="video/mp4" />
 	</video>
+    <div id="video-controls">
+        <button id="video-play">Play</button>
+        <button id="video-pause">Pause</button>
+    </div>
 </div>
 <div id="chat-container" class="container">
 	<div id="chat-display">
