@@ -73,7 +73,12 @@ _xVideo = {
             .find('source')
             .attr('src', source_url);
         this.element.load();
-        this.element.play();
+        this.element.addEventListener('loadeddata', function() {
+            _xSocket.socket.send(JSON.stringify({
+                'type': 'CHAT',
+                'message': 'Loaded video file'
+            }));
+        });
     }
 }
 
